@@ -45,6 +45,7 @@ class Settings:
     refresh_timezone: str
     refresh_hour: int
     refresh_minute: int
+    build_version: str = "development"
     max_json_bytes: int = 5 * 1024 * 1024
 
     @property
@@ -85,4 +86,5 @@ def load_settings() -> Settings:
         refresh_timezone=os.environ.get("BMA_BRIEFING_REFRESH_TIMEZONE", "Africa/Johannesburg"),
         refresh_hour=int(os.environ.get("BMA_BRIEFING_REFRESH_HOUR", "6")),
         refresh_minute=int(os.environ.get("BMA_BRIEFING_REFRESH_MINUTE", "0")),
+        build_version=os.environ.get("BMA_BRIEFING_BUILD_VERSION", "development").strip() or "development",
     )

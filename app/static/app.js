@@ -55,6 +55,7 @@ async function load() {
     state.brief = brief; state.interests = interests.interests; state.watch = watch;
     state.assessments = assessments.assessments; state.exports = exports.exports;
     await api("/api/brief/viewed", {method:"POST"});
+    document.getElementById("buildVersion").textContent = state.me.buildVersion;
     if (state.me.role === "admin") state.users = (await api("/api/users")).users;
     document.getElementById("identity").innerHTML = `<div>${esc(state.me.displayName || state.me.email)}</div><div class="role">${esc(state.me.role)}</div>`;
     document.getElementById("refreshBtn").hidden = !canWrite();

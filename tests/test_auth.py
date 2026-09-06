@@ -22,6 +22,7 @@ def test_development_login_rotates_session_and_uses_approved_account(client):
     me = client.get("/api/me")
     assert me.json()["email"] == "admin@example.org"
     assert me.json()["role"] == "admin"
+    assert me.json()["buildVersion"] == "development"
     assert me.json()["csrf"]
 
 
@@ -67,4 +68,3 @@ def test_microsoft_issuer_requires_matching_tenant():
     issuer = "https://login.microsoftonline.com/01234567-89ab-cdef-0123-456789abcdef/v2.0"
     assert microsoft_issuer({"tid":"01234567-89ab-cdef-0123-456789abcdef"}, issuer)
     assert not microsoft_issuer({"tid":"different"}, issuer)
-

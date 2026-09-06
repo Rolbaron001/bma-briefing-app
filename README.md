@@ -55,6 +55,8 @@ docker run -d --name bma-briefing --restart unless-stopped \
 
 Startup creates the data layout, applies forward-only Alembic migrations, seeds users idempotently, and reports healthy through `/healthz` only when the schema is current. Back up both volumes before an update. Do not delete or recreate them to solve an application problem.
 
+GitHub builds display their branch and Actions run number in the UI footer, for example `main-4`. Local source runs display `development`.
+
 The supported server deployment is the shared Compose/Nginx/Watchtower stack in the sibling `bma-database-app` repository. This repository deliberately does not duplicate that stack.
 
 ## Legacy browser migration

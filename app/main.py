@@ -261,6 +261,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def me(request: Request, user: User = Depends(user_dep)):
         return {"id": user.id, "email": user.email, "displayName": user.display_name,
                 "role": user.role, "csrf": request.session["csrf"],
+                "buildVersion": settings.build_version,
                 "aiEnabled": bool(settings.ai_enabled and settings.anthropic_api_key)}
 
     @app.get("/api/brief")

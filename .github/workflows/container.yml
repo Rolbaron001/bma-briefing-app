@@ -30,8 +30,9 @@ jobs:
           image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/bma-briefing-app"
           branch="${GITHUB_REF_NAME//\//_}"
           branch="$(printf '%s' "$branch" | tr -c 'A-Za-z0-9_.-' '_')"
-          version="${GITHUB_RUN_NUMBER}-${branch}"
-          tags="${image}:${version}"
+          version="${branch}-${GITHUB_RUN_NUMBER}"
+          image_tag="${GITHUB_RUN_NUMBER}-${branch}"
+          tags="${image}:${image_tag}"
           if [ "$GITHUB_REF_NAME" = "main" ]; then tags="${tags}"$'\n'"${image}:latest"; fi
           { echo "tags<<EOF"; echo "$tags"; echo "EOF"; echo "version=$version"; } >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v6
