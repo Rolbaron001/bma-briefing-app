@@ -1,75 +1,68 @@
-# BMA Daily Brief - Intelligence Centre (desktop app)
+# BMA National Border Targeting Centre Brief
 
-A local desktop dashboard that gives the DAC a daily open-source border-threat
-brief across the four BMA clusters, lets him pin and track items over time, and
-generate Risk and Threat Assessments on demand.
+The BMA Briefing App is a shared FastAPI and SQLite application for collecting open-source border reporting, maintaining operational watchlists, recording tracking notes, and producing rapid intelligence assessments.
 
-It runs entirely on the user's own PC. Nothing is sent anywhere except the
-outbound news requests it makes to fetch current reporting.
+The original desktop prototype stored all operational data in one browser. The supported application stores shared state in SQLite, attributes writes to authenticated users, and retains generated exports on the server.
 
-## What is in this folder
+## Access and roles
 
-- **Start BMA Daily Brief.bat** - double-click this to run the app.
-- **server.py** - the small local program that serves the dashboard and pulls the news.
-- **index.html** - the dashboard itself (opens automatically in your browser).
-- **README.md** - this guide.
+Authentication uses Microsoft Entra ID or Google OIDC. An email address must be approved before its first login; the provider's immutable issuer and subject become the durable identity.
 
-## One-time setup
+- `viewer` reads briefs, watchlists, assessments, and retained exports.
+- `analyst` can also refresh reporting, manage interests and watch items, add notes, generate assessments, and create exports.
+- `admin` can additionally manage users, import legacy browser data, inspect audit events, and delete exports.
 
-1. Install Python (only needed once per PC). Download it from
-   https://www.python.org/downloads/ and during setup **tick "Add python.exe to PATH"**.
-   No other downloads or packages are required.
+Blank databases seed `barry@ubiquitech.co.za`, `rolbaron001@gmail.com`, and `christo.bezuidenhout@bma.gov.za` as administrators. Bootstrap does not overwrite later role changes.
 
-## Running it
+## Local use
 
-1. Double-click **Start BMA Daily Brief.bat**.
-2. A small black window opens (that is the app engine) and your browser opens the
-   dashboard automatically at http://localhost:8770.
-3. Leave the black window open while you use the app. To stop, close that window.
+Double-click `Start NBTC Brief.bat`. It installs missing Python packages, starts the application only on `127.0.0.1:8770`, and opens the development sign-in page. Development sign-in is accepted only when explicitly enabled with a localhost public URL.
 
-## Optional: put a shortcut on the Desktop
+For command-line development:
 
-To launch the app without opening this folder each time:
+```powershell
+py -3 -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+$env:BMA_BRIEFING_PUBLIC_URL='http://localhost:8770'
+$env:BMA_BRIEFING_DEVELOPMENT_AUTH='true'
+.venv\Scripts\uvicorn app.main:app --host 127.0.0.1 --port 8770
+```
 
-1. Double-click **Create Desktop Shortcut.bat** (run it once).
-2. A **BMA Daily Brief** shortcut with the BMA icon appears on the Desktop.
-3. From then on, just double-click that shortcut to open the dashboard.
+Run tests with `.venv\Scripts\pytest -q`.
 
-## Using the dashboard
+## Production configuration
 
-- **Daily brief** - four cluster panels (A People Movement, B Illicit Goods,
-  C Coastal and Maritime, D Cross-Cutting Enablers). Each panel scrolls
-  independently. Click **Refresh now** to pull the latest open-source reporting.
-- **Pin** any item to move it to the **Watchlist**, where you can add dated
-  tracking notes and follow it over time.
-- When an item is no longer current, click **Close and archive**. Archived items
-  are kept and can be exported to a file for off-line storage.
-- **Request a Risk / Threat Assessment** - type a question or use a preset
-  (for example threats against Cape Town International Airport, illegal crossing
-  from Zimbabwe, or the modus operandi of narcotics syndicates into Gauteng),
-  pick a product type, and generate it on screen. **Copy for full .docx** hands
-  the request to Claude to produce a BMA-branded Word document.
+Use `.env.example` as a reference. Production needs an independent session secret, Microsoft and/or Google credentials, and persistent database/export paths. Register these callbacks:
 
-## Optional: on-screen AI assessments
+- `https://bma-briefing.ubiquitech.co.za/auth/microsoft/callback`
+- `https://bma-briefing.ubiquitech.co.za/auth/google/callback`
 
-The dashboard works without any AI. If you want the assessments written on screen
-automatically, add an Anthropic API key:
+AI is disabled unless `BMA_BRIEFING_AI_ENABLED=true` and `ANTHROPIC_API_KEY` are both configured. Selected source records are sent to Anthropic only when an analyst explicitly requests an assessment.
 
-1. Create a plain text file named **apikey.txt** in this folder.
-2. Paste your Anthropic API key as the only line and save.
-3. Restart the app. The header will show that AI assessments are enabled.
+The worker refreshes daily at 06:00 `Africa/Johannesburg`. Timezone, hour, and minute are configurable. A failed refresh never replaces the last successful briefing.
 
-Without a key, assessments produce a structured scaffold you can complete, plus
-the **Copy for full .docx** hand-off to Claude.
+## Container and persistence
 
-## If a refresh comes back empty
+The image runs as an unprivileged user and listens on port `8790`. SQLite and exports use separate volumes:
 
-That usually means the PC could not reach the news service at that moment
-(no internet, or a corporate firewall blocking it). The last brief stays on
-screen. Try **Refresh now** again, or check the connection.
+```bash
+docker run -d --name bma-briefing --restart unless-stopped \
+  -p 127.0.0.1:8792:8790 --env-file .env.production \
+  -v briefing-db:/data/db \
+  -v briefing-exports:/data/exports \
+  ghcr.io/barrypitman/bma-briefing-app:latest
+```
 
-## Notes
+Startup creates the data layout, applies forward-only Alembic migrations, seeds users idempotently, and reports healthy through `/healthz` only when the schema is current. Back up both volumes before an update. Do not delete or recreate them to solve an application problem.
 
-- The brief is open-source only. Nothing here implies classified access. Verify
-  every item against its original source before using it in a formal product.
-- Motto: Secure Borders for Development - www.bma.gov.za
+The supported server deployment is the shared Compose/Nginx/Watchtower stack in the sibling `bma-database-app` repository. This repository deliberately does not duplicate that stack.
+
+## Legacy browser migration
+
+Run the new application locally on the original `http://localhost:8770` origin and sign in as an administrator. Open `/legacy-export` to download the old `nbtc_brief_v1` state, then upload that JSON file from Administration. Interests, watchlist/archive records, notes, and assessments are imported transactionally. Authentication information, UI preferences, and transient unpinned briefing data are ignored. Re-importing the same file is harmless.
+
+## Operational security
+
+All business routes require a current signed session; every mutation also requires CSRF and an appropriate role. External reporting is untrusted. The fetcher verifies TLS, restricts RSS fetching to Google News over HTTPS, blocks non-public destinations, and bounds redirects and response sizes. The application never accepts browser-supplied assessment grounding, actor identities, or filesystem paths.
+
+Read `AGENTS.md` before changing persistence, authentication, fetching, migrations, AI, or deployment behavior.

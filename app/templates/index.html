@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>National Border Targeting Centre Brief</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand">
+      <div class="eyebrow">Border Management Authority</div>
+      <h1>National Border Targeting Centre Brief</h1>
+      <div class="strap">Secure Borders for Development</div>
+    </div>
+    <div class="header-actions">
+      <div id="identity" class="identity"></div>
+      <button id="refreshBtn" class="primary" type="button">Refresh now</button>
+      <button id="logoutBtn" class="quiet" type="button">Sign out</button>
+    </div>
+  </header>
+  <div class="notice">OFFICIAL — Open-source basis. Verify every item against its original source.</div>
+  <div id="status" class="status" aria-live="polite"></div>
+  <nav id="tabs" class="tabs" aria-label="Brief sections"></nav>
+  <main id="view" class="content"><div class="empty">Loading the shared briefing…</div></main>
+  <footer>Border Management Authority · National Border Targeting Centre · <span id="buildVersion">__BMA_BRIEFING_BUILD_VERSION__</span></footer>
+  <dialog id="documentDialog">
+    <div class="dialog-head"><strong id="dialogTitle">Assessment</strong><button id="dialogClose" class="quiet" type="button">Close</button></div>
+    <div id="dialogBody" class="document-body"></div>
+  </dialog>
+</body>
+</html>

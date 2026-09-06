@@ -18,10 +18,15 @@ ENV/
 apikey.txt
 .env
 .env.*
+!.env.example
 
 # Logs and runtime output
 *.log
 *.pid
+data/
+.pytest_cache/
+.test-tmp/
+pytest-cache-files-*/
 
 # Editor and OS files
 .idea/

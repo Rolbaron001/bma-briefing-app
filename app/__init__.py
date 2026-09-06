@@ -1,0 +1,2 @@
+"""BMA Briefing server application."""
+

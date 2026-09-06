@@ -1,0 +1,43 @@
+name: Container image
+
+on:
+  push:
+    branches: ['**']
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare image tags
+        id: image
+        shell: bash
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/bma-briefing-app"
+          branch="${GITHUB_REF_NAME//\//_}"
+          branch="$(printf '%s' "$branch" | tr -c 'A-Za-z0-9_.-' '_')"
+          version="${GITHUB_RUN_NUMBER}-${branch}"
+          tags="${image}:${version}"
+          if [ "$GITHUB_REF_NAME" = "main" ]; then tags="${tags}"$'\n'"${image}:latest"; fi
+          { echo "tags<<EOF"; echo "$tags"; echo "EOF"; echo "version=$version"; } >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.image.outputs.tags }}
+          build-args: BMA_BRIEFING_BUILD_VERSION=${{ steps.image.outputs.version }}
+
